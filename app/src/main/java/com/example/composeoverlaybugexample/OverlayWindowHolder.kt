@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Context.WINDOW_SERVICE
 import android.graphics.PixelFormat
 import android.os.Bundle
+import android.util.Log
 import android.view.Gravity
 import android.view.ViewGroup
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -27,9 +29,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.SavedStateRegistry
@@ -53,11 +57,23 @@ class OverlayWindowHolder {
             LaunchedEffect(null) {
                 while (true) {
                     counter += 1
+                    Log.d("_ComposeOverlayBugExample", "Loop is running (${counter})")
                     delay(100)
                 }
             }
             Box(Modifier.background(Color(0f, 0f, 0f, 0.75f)).height(48.dp).padding(horizontal = 16.dp), Alignment.Center) {
                 Text(counter.toString(), color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold)
+            }
+            // Check that lifecycle is run through
+            val lifeCycleOwner = LocalLifecycleOwner.current
+            DisposableEffect(lifeCycleOwner) {
+                val observer = LifecycleEventObserver { source, event ->
+                    Log.d("_ComposeOverlayBugExample", "Lifecycle event: $source, $event")
+                }
+                lifeCycleOwner.lifecycle.addObserver(observer)
+                onDispose {
+                    lifeCycleOwner.lifecycle.removeObserver(observer)
+                }
             }
         }
 
